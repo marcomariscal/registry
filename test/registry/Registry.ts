@@ -22,6 +22,11 @@ describe("Registry", async () => {
   });
 
   describe("claim", () => {
+    beforeEach(async () => {
+      const registryArtifact = await artifacts.readArtifact("Registry");
+      registry = <Registry>await deployContract(admin, registryArtifact);
+    });
+
     it("should not allow for claiming a specific name multiple times", async () => {
       // claim name initially with admin
       await registry.connect(admin).claim(name);
