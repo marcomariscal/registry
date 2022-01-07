@@ -1,3 +1,4 @@
+import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";
@@ -34,6 +35,11 @@ if (!infuraApiKey) {
   throw new Error("Please set your INFURA_API_KEY in a .env file");
 }
 
+const etherscanApiKey: string | undefined = process.env.ETHERSCAN_API_KEY;
+if (!etherscanApiKey) {
+  throw new Error("Please set your etherscan api key in a .env file");
+}
+
 function getChainConfig(network: keyof typeof chainIds): NetworkUserConfig {
   const url: string = "https://" + network + ".infura.io/v3/" + infuraApiKey;
   return {
@@ -66,6 +72,11 @@ const config: HardhatUserConfig = {
     kovan: getChainConfig("kovan"),
     rinkeby: getChainConfig("rinkeby"),
     ropsten: getChainConfig("ropsten"),
+  },
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: etherscanApiKey,
   },
   paths: {
     artifacts: "./artifacts",
