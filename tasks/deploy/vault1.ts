@@ -7,7 +7,7 @@ import { ERC20Mock } from "../../src/types/ERC20Mock";
 import { Vault1__factory } from "../../src/types/factories/Vault1__factory";
 import { Vault1 as Vault } from "../../src/types/Vault1";
 
-task("deploy:Vault1").setAction(async (taskArgs: TaskArguments, { ethers }) => {
+task("deploy:Vault1").setAction(async (taskArgs: TaskArguments, { ethers, run }) => {
   const [deployer] = await ethers.getSigners();
 
   const tokenFactory = <ERC20Mock__factory>await ethers.getContractFactory("ERC20Mock");
@@ -21,4 +21,16 @@ task("deploy:Vault1").setAction(async (taskArgs: TaskArguments, { ethers }) => {
   console.log("Deploying contracts with the account:", deployer.address);
   console.log("Token deployed to address:", token.address);
   console.log("Vault deployed to address:", vault.address);
+
+  // // verify TST token on etherscan
+  // await run("verify:verify", {
+  //   address: token.address,
+  //   constructorArguments: ["Test", "TST"],
+  // });
+
+  // // verify TST vault on etherscan
+  // await run("verify:verify", {
+  //   address: vault.address,
+  //   constructorArguments: [token.address],
+  // });
 });
