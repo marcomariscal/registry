@@ -16,6 +16,9 @@ contract Vault1 {
         token = IERC20(_token);
     }
 
+    /// @notice deposits _amount into the contract and updates the balances mapping
+    /// @dev ensure this is the proper approval pattern
+    /// @param _amount the amount to deposit
     function deposit(uint256 _amount) public {
         require(token.balanceOf(msg.sender) >= _amount, "not enough token balance");
         require(_amount > 0, "amount should be greater than 0");
@@ -25,6 +28,8 @@ contract Vault1 {
         emit Deposit(msg.sender, _amount);
     }
 
+    /// @notice withdraws _amount from the contract and updates the balances mapping
+    /// @param _amount the amount to withdraw
     function withdraw(uint256 _amount) public {
         uint256 balance = balances[msg.sender];
         require(balance >= _amount, "amount greater than vault balance");
