@@ -29,6 +29,7 @@ contract Vault1 {
     }
 
     /// @notice withdraws _amount from the contract and updates the balances mapping
+    /// @dev ensure the _amount can be withdrawn
     /// @param _amount the amount to withdraw
     function withdraw(uint256 _amount) public {
         uint256 balance = balances[msg.sender];
