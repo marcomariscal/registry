@@ -68,6 +68,11 @@ describe("Vault1", async () => {
         await vault.connect(admin).deposit(adminBalance);
       });
 
+      it("should have proper balances", async () => {
+        expect(await vault.connect(admin).balances(admin.address)).to.equal(adminBalance);
+        expect(await token.connect(admin).balanceOf(admin.address)).to.equal(ZERO);
+      });
+
       it("should not allow withdrawal when not enough balance and others have deposited", async () => {
         await expect(vault.connect(user1).withdraw(ONE)).to.be.revertedWith("amount greater than vault balance");
         await expect(vault.connect(admin).withdraw(adminBalance.add(ONE))).to.be.revertedWith(
