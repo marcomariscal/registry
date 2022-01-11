@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.4;
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@yield-protocol/utils-v2/contracts/token/IERC20.sol";
 
 /// @title Vault1
 /// @author M
