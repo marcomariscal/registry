@@ -22,8 +22,8 @@ contract Vault1 {
     function deposit(uint256 _amount) public {
         require(token.balanceOf(msg.sender) >= _amount, "not enough token balance");
         require(_amount > 0, "amount should be greater than 0");
-        token.approve(msg.sender, _amount);
         balances[msg.sender] += _amount;
+        token.approve(msg.sender, _amount);
 
         emit Deposit(msg.sender, _amount);
     }
@@ -33,8 +33,8 @@ contract Vault1 {
     /// @param _amount the amount to withdraw
     function withdraw(uint256 _amount) public {
         uint256 balance = balances[msg.sender];
-        require(balance >= _amount, "amount greater than vault balance");
         balances[msg.sender] = balance - _amount;
+        require(balance >= _amount, "amount greater than vault balance");
 
         emit Withdraw(msg.sender, _amount);
     }
