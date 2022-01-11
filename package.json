@@ -87,5 +87,8 @@
   },
   "engines": {
     "yarn": "YARN NO LONGER USED - use npm instead."
+  },
+  "dependencies": {
+    "@yield-protocol/utils-v2": "^2.5.0"
   }
 }
