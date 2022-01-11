@@ -29,6 +29,9 @@ describe("Vault1", async () => {
   beforeEach(async () => {
     const tokenArtifact = await artifacts.readArtifact("ERC20Mock");
     token = <ERC20Mock>await deployContract(admin, tokenArtifact, ["Test", "TST"]);
+
+    // mint 100 TST to admin
+    await token.mint(admin.address, ethers.utils.parseUnits("100"));
     adminBalance = await token.balanceOf(admin.address);
 
     const vaultArtifact = await artifacts.readArtifact("Vault1");
@@ -45,11 +48,26 @@ describe("Vault1", async () => {
     });
 
     it("should deposit if enough funds", async () => {
+      // before deposit balance checks
+      expect(await token.balanceOf(admin.address)).to.equal(adminBalance);
+      expect(await vault.balances(admin.address)).to.equal(ZERO);
+
+      // deposit
+      await token.connect(admin).approve(vault.address, adminBalance);
       await vault.connect(admin).deposit(adminBalance);
+
+      // after deposit balance checks
       expect(await vault.balances(admin.address)).to.equal(adminBalance);
+      expect(await token.balanceOf(admin.address)).to.equal(ZERO);
     });
 
     describe("with deposits", async () => {
+      beforeEach(async () => {
+        // deposit into vault
+        await token.approve(vault.address, adminBalance);
+        await vault.connect(admin).deposit(adminBalance);
+      });
+
       it("should not allow withdrawal when not enough balance and others have deposited", async () => {
         await expect(vault.connect(user1).withdraw(ONE)).to.be.revertedWith("amount greater than vault balance");
         await expect(vault.connect(admin).withdraw(adminBalance.add(ONE))).to.be.revertedWith(
@@ -58,9 +76,16 @@ describe("Vault1", async () => {
       });
 
       it("should allow withdrawal", async () => {
+        // before withdrawal balance checks
+        expect(await token.balanceOf(admin.address)).to.equal(ZERO);
+        expect(await vault.balances(admin.address)).to.equal(adminBalance);
+
         // withdraw all admin funds from vault
         expect(vault.connect(admin).withdraw(adminBalance));
+
+        // after withdrawal balance checks
         expect(await vault.balances(admin.address)).to.equal(ZERO);
+        expect(await token.balanceOf(admin.address)).to.equal(adminBalance);
       });
     });
   });
