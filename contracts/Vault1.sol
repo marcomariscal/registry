@@ -22,7 +22,6 @@ contract Vault1 {
     function deposit(uint256 _amount) public {
         require(token.balanceOf(msg.sender) >= _amount, "not enough token balance");
         require(_amount > 0, "amount should be greater than 0");
-        token.approve(address(this), _amount);
 
         // state change before transfer to prevent re-entrancy
         balances[msg.sender] += _amount;
