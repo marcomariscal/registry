@@ -20,7 +20,6 @@ contract Vault1 {
     /// @dev ensure this is the proper approval pattern
     /// @param _amount the amount to deposit
     function deposit(uint256 _amount) public {
-        require(token.balanceOf(msg.sender) >= _amount, "not enough token balance");
         require(_amount > 0, "amount should be greater than 0");
 
         // state change before transfer to prevent re-entrancy
@@ -39,7 +38,7 @@ contract Vault1 {
         require(balance >= _amount, "amount greater than vault balance");
         balances[msg.sender] = balance - _amount;
 
-        payable(msg.sender).transfer(_amount);
+        token.transfer(msg.sender, _amount);
 
         emit Withdraw(msg.sender, _amount);
     }
