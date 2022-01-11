@@ -86,7 +86,7 @@ describe("Vault1", async () => {
         expect(await vault.balances(admin.address)).to.equal(adminBalance);
 
         // withdraw all admin funds from vault
-        expect(vault.connect(admin).withdraw(adminBalance));
+        await vault.connect(admin).withdraw(adminBalance);
 
         // after withdrawal balance checks
         expect(await vault.balances(admin.address)).to.equal(ZERO);
