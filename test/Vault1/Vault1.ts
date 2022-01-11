@@ -24,9 +24,7 @@ describe("Vault1", async () => {
     const signers = await ethers.getSigners();
     admin = signers[0];
     user1 = signers[1];
-  });
 
-  beforeEach(async () => {
     const tokenArtifact = await artifacts.readArtifact("ERC20Mock");
     token = <ERC20Mock>await deployContract(admin, tokenArtifact, ["Test", "TST"]);
 
@@ -44,7 +42,9 @@ describe("Vault1", async () => {
     });
 
     it("should not deposit if not enough funds", async () => {
-      await expect(vault.connect(admin).deposit(adminBalance.add(ONE))).to.be.revertedWith("not enough token balance");
+      await expect(vault.connect(admin).deposit(adminBalance.add(ONE))).to.be.revertedWith(
+        "ERC20: Insufficient approval",
+      );
     });
 
     it("should deposit if enough funds", async () => {
@@ -62,12 +62,6 @@ describe("Vault1", async () => {
     });
 
     describe("with deposits", async () => {
-      beforeEach(async () => {
-        // deposit into vault
-        await token.approve(vault.address, adminBalance);
-        await vault.connect(admin).deposit(adminBalance);
-      });
-
       it("should have proper balances", async () => {
         expect(await vault.connect(admin).balances(admin.address)).to.equal(adminBalance);
         expect(await token.connect(admin).balanceOf(admin.address)).to.equal(ZERO);
