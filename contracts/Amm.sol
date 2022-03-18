@@ -54,6 +54,10 @@ contract Amm is ERC20 {
         // initialize k
         k = _x * _y;
 
+        // update reserves
+        xReserves = _x;
+        yReserves = _y;
+
         // transfer tokens to this contract
         xToken.transferFrom(msg.sender, address(this), _x);
         yToken.transferFrom(msg.sender, address(this), _y);
