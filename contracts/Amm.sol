@@ -58,16 +58,18 @@ contract Amm is ERC20 {
         xReserves = _x;
         yReserves = _y;
 
+        uint256 minted = _x / xReserves; // check
+
         // transfer tokens to this contract
         xToken.transferFrom(msg.sender, address(this), _x);
         yToken.transferFrom(msg.sender, address(this), _y);
 
         // mint k amm tokens to sender
-        _mint(msg.sender, k);
+        _mint(msg.sender, minted);
 
-        emit Liquidity(msg.sender, _x, _y, k);
+        emit Liquidity(msg.sender, _x, _y, minted);
 
-        return k;
+        return minted;
     }
 
     /// @notice mints amm tokens to sender for providing liquidity
@@ -85,6 +87,10 @@ contract Amm is ERC20 {
 
         // calculate the amount of liquidity tokens to mint based on _x supplied to the current x reserves
         uint256 minted = _x / xReserves;
+
+        // update reserves
+        xReserves += _x;
+        yReserves += _y;
 
         // update k
         k = xReserves * yReserves;
