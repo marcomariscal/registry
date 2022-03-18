@@ -45,7 +45,12 @@ contract Amm is ERC20 {
     /// @param _x the amount of x supplied
     /// @param _y the amount of y supplied
     /// @notice initializes amm and can only be called once
+    /// @notice requires x and y to be in the same proportion on initialization
     function init(uint256 _x, uint256 _y) public {
+        require(xReserves == 0, "pool already initialized");
+        require(_x == _y, "x and y amounts should be the same");
+
+        // initialize k
         k = _x * _y;
 
         // mint k amm tokens to sender
@@ -67,7 +72,7 @@ contract Amm is ERC20 {
         // make sure sent ratio matches amm ratio
         require(sentRatio == ratio, "ratio of sent tokens does not match amm");
 
-        // calculate the amount to mint base on _x supplied to the current x reserves
+        // calculate the amount of liquidity tokens to mint based on _x supplied to the current x reserves
         uint256 minted = _x / xReserves;
 
         // update k
