@@ -72,7 +72,7 @@ contract Amm is ERC20 {
 
     /// @notice mints amm tokens to sender for providing liquidity
     /// @param _x the amount of x supplied
-    /// @param _y the amount of x supplied
+    /// @param _y the amount of y supplied
     function mint(uint256 _x, uint256 _y) public returns (uint256) {
         // calculate sent ratio
         uint256 sentRatio = _x / _y;
