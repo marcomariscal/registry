@@ -42,11 +42,12 @@ contract Amm is ERC20 {
     }
 
     /// @notice initializes k value
-    /// @param _x the amount of x supplied
-    /// @param _y the amount of y supplied
     /// @notice initializes amm and can only be called once
     /// @notice requires x and y to be in the same proportion on initialization
-    function init(uint256 _x, uint256 _y) public {
+    /// @param _x the amount of x supplied
+    /// @param _y the amount of y supplied
+    /// @return number of amm tokens minted
+    function init(uint256 _x, uint256 _y) public returns (uint256) {
         require(xReserves == 0, "pool already initialized");
         require(_x == _y, "x and y amounts should be the same");
 
@@ -57,6 +58,8 @@ contract Amm is ERC20 {
         _mint(msg.sender, k);
 
         emit Liquidity(msg.sender, _x, _y, k);
+
+        return k;
     }
 
     /// @notice mints amm tokens to sender for providing liquidity
