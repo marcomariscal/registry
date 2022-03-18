@@ -14,9 +14,9 @@ contract Amm is ERC20 {
     IERC20 public xToken;
     IERC20 public yToken;
 
-    uint256 private xReserves;
-    uint256 private yReserves;
-    uint256 private k;
+    uint256 public xReserves;
+    uint256 public yReserves;
+    uint256 public k;
 
     constructor(address _xToken, address _yToken)
         ERC20(
