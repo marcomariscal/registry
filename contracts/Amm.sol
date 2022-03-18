@@ -118,7 +118,7 @@ contract Amm is ERC20 {
     /// @param _amount the amount of x to swap for y
     /// @return amount of y sent to user
     function sellX(uint256 _amount) public returns (uint256) {
-        require(_amount < yReserves, "not enough x reserves");
+        require(_amount < yReserves, "not enough y reserves");
 
         // calculate new reserves
         uint256 newXReserves = xReserves + _amount;
@@ -149,7 +149,7 @@ contract Amm is ERC20 {
     /// @param _amount the amount of y to swap for x
     /// @return amount of x sent to user
     function sellY(uint256 _amount) public returns (uint256) {
-        require(_amount < yReserves, "not enough y reserves");
+        require(_amount < xReserves, "not enough x reserves");
 
         // calculate new reserves
         uint256 newYReserves = yReserves + _amount;
