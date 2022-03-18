@@ -54,6 +54,10 @@ contract Amm is ERC20 {
         // initialize k
         k = _x * _y;
 
+        // transfer tokens to this contract
+        xToken.transferFrom(msg.sender, address(this), _x);
+        yToken.transferFrom(msg.sender, address(this), _y);
+
         // mint k amm tokens to sender
         _mint(msg.sender, k);
 
@@ -65,7 +69,7 @@ contract Amm is ERC20 {
     /// @notice mints amm tokens to sender for providing liquidity
     /// @param _x the amount of x supplied
     /// @param _y the amount of x supplied
-    function mint(uint256 _x, uint256 _y) public {
+    function mint(uint256 _x, uint256 _y) public returns (uint256) {
         // calculate sent ratio
         uint256 sentRatio = _x / _y;
 
@@ -85,6 +89,8 @@ contract Amm is ERC20 {
         _mint(msg.sender, minted);
 
         emit Liquidity(msg.sender, _x, _y, minted);
+
+        return minted;
     }
 
     /// @notice burns amm tokens after receiving from sender
