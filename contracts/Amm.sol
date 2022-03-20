@@ -138,15 +138,15 @@ contract Amm is ERC20 {
         // calculate amount of y to send
         uint256 amountToSend = yReserves - newYReserves;
 
-        // update reserves
-        xReserves = newXReserves;
-        yReserves = newYReserves;
-
         // calculate new k
-        uint256 newK = xReserves * yReserves;
+        uint256 newK = newXReserves * newYReserves;
 
         // make sure k stays the same
         require(k == newK, "k after swap needs to match current k");
+
+        // update reserves
+        xReserves = newXReserves;
+        yReserves = newYReserves;
 
         xToken.transferFrom(msg.sender, address(this), _amount);
         yToken.transfer(msg.sender, amountToSend);
@@ -171,15 +171,15 @@ contract Amm is ERC20 {
         // calculate amount of x to send
         uint256 amountToSend = xReserves - newXReserves;
 
-        // update current reserves
-        xReserves = newXReserves;
-        yReserves = newYReserves;
-
         // calculate new k
-        uint256 newK = xReserves * yReserves;
+        uint256 newK = newXReserves * newYReserves;
 
         // make sure k stays the same
         require(k == newK, "k after swap needs to match current k");
+
+        // update current reserves
+        xReserves = newXReserves;
+        yReserves = newYReserves;
 
         yToken.transferFrom(msg.sender, address(this), _amount);
         xToken.transfer(msg.sender, amountToSend);
