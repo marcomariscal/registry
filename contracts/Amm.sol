@@ -3,7 +3,7 @@ pragma solidity >=0.8.4;
 import "@yield-protocol/utils-v2/contracts/token/ERC20.sol";
 import "hardhat/console.sol";
 
-/// @title Vault2
+/// @title Amm
 /// @author M
 /// @notice Automated market maker that facilitates trades between two ERC20 tokens
 /// @notice Uses k = x * y
