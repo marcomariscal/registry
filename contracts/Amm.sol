@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.4;
 import "@yield-protocol/utils-v2/contracts/token/ERC20.sol";
+import "hardhat/console.sol";
 
 /// @title Vault2
 /// @author M
@@ -84,7 +85,7 @@ contract Amm is ERC20 {
         require(sentRatio == ratio, "ratio of sent tokens does not match amm");
 
         // calculate the amount of liquidity tokens to mint based on _x supplied to the current x reserves
-        uint256 minted = _x / xReserves;
+        uint256 minted = (_x / xReserves) * k;
 
         // update reserves
         xReserves += _x;
@@ -128,14 +129,16 @@ contract Amm is ERC20 {
     function sellX(uint256 _amount) public returns (uint256) {
         require(_amount < yReserves, "not enough y reserves");
 
+        // x * y = k
+        // y = k / x
         // calculate new reserves
         uint256 newXReserves = xReserves + _amount;
         uint256 newYReserves = k / newXReserves;
 
         // calculate amount of y to send
-        uint256 amountToSend = newYReserves - yReserves;
+        uint256 amountToSend = yReserves - newYReserves;
 
-        // update current reserves
+        // update reserves
         xReserves = newXReserves;
         yReserves = newYReserves;
 
@@ -159,12 +162,14 @@ contract Amm is ERC20 {
     function sellY(uint256 _amount) public returns (uint256) {
         require(_amount < xReserves, "not enough x reserves");
 
+        // x * y = k
+        // x = k / y
         // calculate new reserves
         uint256 newYReserves = yReserves + _amount;
         uint256 newXReserves = k / newYReserves;
 
         // calculate amount of x to send
-        uint256 amountToSend = newXReserves - xReserves;
+        uint256 amountToSend = xReserves - newXReserves;
 
         // update current reserves
         xReserves = newXReserves;
