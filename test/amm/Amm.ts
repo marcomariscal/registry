@@ -1,19 +1,16 @@
 import { artifacts, ethers, waffle } from "hardhat";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-
-import type { Amm, LiquidityEvent } from "../../src/types/Amm";
+import type { Amm } from "../../src/types/Amm";
 import type { ERC20Mock } from "../../src/types/ERC20Mock";
 import { expect } from "chai";
 import { BigNumber, utils } from "ethers";
-import _ from "underscore";
+import { formatEther } from "ethers/lib/utils";
 
 const { deployContract } = waffle;
 const { parseEther } = utils;
 
 const ONE = ethers.constants.One;
-const ZERO = ethers.constants.Zero;
-
-const calculateK = (_x: BigNumber, _y: BigNumber) => _x.mul(_y);
+const WAD = ethers.constants.WeiPerEther;
 
 describe("Amm", async () => {
   let admin: SignerWithAddress;
@@ -64,52 +61,59 @@ describe("Amm", async () => {
     });
 
     it("should initialize amm", async () => {
-      const _x = parseEther("10");
-      const _y = parseEther("10");
-      const _k = calculateK(_x, _y);
-      const _args = [admin.address, _x, _y, _k];
+      const x = parseEther("10");
+      const y = parseEther("10");
+      const k = x.mul(y).div(WAD);
+      const args = [admin.address, x, y, k];
 
-      await adminXToken.approve(adminAmm.address, _x);
-      await adminYToken.approve(adminAmm.address, _y);
+      await adminXToken.approve(adminAmm.address, x);
+      await adminYToken.approve(adminAmm.address, y);
 
-      await expect(adminAmm.init(_x, _y))
+      await expect(adminAmm.init(x, y))
         .to.emit(adminAmm, "Liquidity")
-        .withArgs(..._args);
+        .withArgs(...args);
 
-      expect(await adminAmm.balanceOf(admin.address)).to.eq(_k);
-      expect(await adminAmm.xReserves()).to.eq(_x);
-      expect(await adminAmm.yReserves()).to.eq(_y);
+      expect(await adminAmm.balanceOf(admin.address)).to.eq(k);
+      expect(await adminAmm.xReserves()).to.eq(x);
+      expect(await adminAmm.yReserves()).to.eq(y);
     });
 
     it("should not allow initialize after already init", async () => {
-      const _x = parseEther("10");
-      const _y = parseEther("10");
+      const x = parseEther("10");
+      const y = parseEther("10");
 
-      await expect(adminAmm.init(_x, _y)).to.be.revertedWith("pool already initialized");
+      await expect(adminAmm.init(x, y)).to.be.revertedWith("pool already initialized");
     });
 
     describe("with liquidity", async () => {
       it("should not mint amm tokens when x and y have different amounts", async () => {
-        const _x = parseEther("1");
-        const _y = parseEther("1.5");
+        const x = parseEther("1");
+        const y = parseEther("1.5");
 
-        await expect(adminAmm.mint(_x, _y)).to.be.revertedWith("ratio of sent tokens does not match amm");
+        await expect(adminAmm.mint(x, y)).to.be.revertedWith("reserve ratios need to stay the same");
       });
 
       it("should mint amm tokens", async () => {
-        const _x = parseEther("1");
-        const _y = parseEther("1");
+        const x = parseEther("1");
+        const y = parseEther("1");
 
-        const [xTokensBefore, yTokensBefore, xReserves, ammTokensBefore] = await Promise.all([
+        const [xTokensBefore, yTokensBefore, xReserves, ammTokensBefore, totalSupply] = await Promise.all([
           adminXToken.balanceOf(admin.address),
           adminYToken.balanceOf(admin.address),
           adminAmm.xReserves(),
           adminAmm.balanceOf(admin.address),
+          adminAmm.totalSupply(),
         ]);
 
-        await adminXToken.approve(adminAmm.address, _x);
-        await adminYToken.approve(adminAmm.address, _y);
-        await adminAmm.mint(_x, _y);
+        const shouldHaveMinted = x.mul(totalSupply).div(xReserves);
+
+        await adminXToken.approve(adminAmm.address, x);
+        await adminYToken.approve(adminAmm.address, y);
+
+        // check minted token event
+        await expect(adminAmm.mint(x, y))
+          .to.emit(adminAmm, "Liquidity")
+          .withArgs(admin.address, x, y, shouldHaveMinted);
 
         const [xTokensAfter, yTokensAfter, ammTokensAfter] = await Promise.all([
           adminXToken.balanceOf(admin.address),
@@ -117,44 +121,90 @@ describe("Amm", async () => {
           adminAmm.balanceOf(admin.address),
         ]);
 
-        expect(xTokensBefore.sub(xTokensAfter)).to.eq(_x);
-        expect(yTokensBefore.sub(yTokensAfter)).to.eq(_y);
-
-        expect(ammTokensAfter.sub(ammTokensBefore)).to.eq(_x.div(xReserves));
+        // check account token balances
+        expect(ammTokensAfter.sub(ammTokensBefore)).to.eq(shouldHaveMinted);
+        expect(xTokensBefore.sub(xTokensAfter)).to.eq(x);
+        expect(yTokensBefore.sub(yTokensAfter)).to.eq(y);
       });
 
       it("should burn amm tokens", async () => {
-        const _amount = parseEther("1");
+        const amount = parseEther("1");
 
         const ammTokensBefore = await adminAmm.balanceOf(admin.address);
-        await adminAmm.burn(_amount);
-        const ammTokensAfter = await adminAmm.balanceOf(admin.address);
 
-        expect(ammTokensBefore.sub(ammTokensAfter)).to.eq(_amount);
+        // calculate how many x and y tokens should be received
+        const [totalSupply, xReserves, yReserves] = await Promise.all([
+          adminAmm.totalSupply(),
+          adminAmm.xReserves(),
+          adminAmm.yReserves(),
+        ]);
+
+        const ratio = xReserves.div(totalSupply);
+
+        const xToReceive = xReserves.mul(ratio);
+        const yToReceive = yReserves.mul(ratio);
+
+        await adminAmm.approve(adminAmm.address, amount);
+
+        // check minted token event
+        await expect(adminAmm.burn(amount))
+          .to.emit(adminAmm, "Burn")
+          .withArgs(admin.address, amount, xToReceive, yToReceive);
+
+        const ammTokensAfter = await adminAmm.balanceOf(admin.address);
+        expect(ammTokensBefore.sub(ammTokensAfter)).to.eq(amount);
       });
 
       it("should sell x", async () => {
-        const _x = parseEther("1");
+        const x = parseEther("1");
 
+        // balances before
         const xBalBefore = await xToken.balanceOf(admin.address);
-        await adminAmm.sellX(_x);
-        const xBalAfter = await xToken.balanceOf(admin.address);
+        const yBalBefore = await yToken.balanceOf(admin.address);
 
-        expect(xBalBefore.sub(xBalAfter)).to.eq(_x);
-        await expect(adminAmm.sellX(_x)).to.emit(adminAmm, "SellX");
-        // .withArgs(..._args);
+        // calculate how much y should be received
+        const [xReserves, yReserves] = await Promise.all([adminAmm.xReserves(), adminAmm.yReserves()]);
+        const newXReserves = xReserves.add(x);
+        const newYReserves = xReserves.mul(yReserves).div(newXReserves);
+        const yToReceive = yReserves.sub(newYReserves);
+
+        await adminXToken.approve(adminAmm.address, x);
+
+        // check sell x event
+        await expect(adminAmm.sellX(x)).to.emit(adminAmm, "SellX").withArgs(admin.address, x, yToReceive);
+
+        // balances after
+        const xBalAfter = await xToken.balanceOf(admin.address);
+        const yBalAfter = await yToken.balanceOf(admin.address);
+
+        expect(xBalBefore.sub(xBalAfter)).to.eq(x);
+        expect(yBalAfter.sub(yBalBefore)).to.eq(yToReceive);
       });
 
       it("should sell y", async () => {
-        const _y = parseEther("1");
+        const y = parseEther("1");
 
+        // balances before
+        const xBalBefore = await xToken.balanceOf(admin.address);
         const yBalBefore = await yToken.balanceOf(admin.address);
-        await adminAmm.sellY(_y);
+
+        // calculate how much x should be received
+        const [xReserves, yReserves] = await Promise.all([adminAmm.xReserves(), adminAmm.yReserves()]);
+        const newYReserves = yReserves.add(y);
+        const newXReserves = xReserves.mul(yReserves).div(newYReserves);
+        const xToReceive = xReserves.sub(newXReserves);
+
+        await adminYToken.approve(adminAmm.address, y);
+
+        // check sell x event
+        await expect(adminAmm.sellY(y)).to.emit(adminAmm, "SellY").withArgs(admin.address, y, xToReceive);
+
+        // balances after
+        const xBalAfter = await xToken.balanceOf(admin.address);
         const yBalAfter = await yToken.balanceOf(admin.address);
 
-        expect(yBalBefore.sub(yBalAfter)).to.eq(_y);
-        await expect(adminAmm.sellY(_y)).to.emit(adminAmm, "SellY");
-        // .withArgs(..._args);
+        expect(xBalAfter.sub(xBalBefore)).to.eq(xToReceive);
+        expect(yBalBefore.sub(yBalAfter)).to.eq(y);
       });
     });
   });
