@@ -18,7 +18,6 @@ contract Amm is ERC20 {
 
     uint256 public xReserves;
     uint256 public yReserves;
-    uint256 public k;
 
     constructor(address _xToken, address _yToken)
         ERC20(
@@ -53,8 +52,7 @@ contract Amm is ERC20 {
         require(xReserves == 0, "pool already initialized");
         require(_x == _y, "x and y amounts should be the same");
 
-        // initialize k
-        k = (_x * _y) / 1e18;
+        uint256 k = (_x * _y) / 1e18;
 
         // update reserves
         xReserves = _x;
@@ -79,7 +77,7 @@ contract Amm is ERC20 {
         uint256 xReserves_ = xReserves;
         require(xReserves_ > 0, "pool needs to be initialized");
 
-        require(x / y == xReserves / yReserves, "reserve ratios need to stay the same");
+        require(x / y == xReserves_ / yReserves, "reserve ratios need to stay the same");
 
         // calculate the amount of liquidity tokens to mint based on _x supplied to the current x reserves
         uint256 minted = (x * _totalSupply) / xReserves_;
@@ -105,6 +103,7 @@ contract Amm is ERC20 {
     function burn(uint256 wad) public {
         uint256 xReserves_ = xReserves;
         require(xReserves_ > 0, "pool needs to be initialized");
+        require(wad < _totalSupply, "too much");
 
         // ratio of amount to burn to total supply
         uint256 ratio = (wad) / _totalSupply;
