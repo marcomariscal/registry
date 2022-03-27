@@ -73,6 +73,7 @@ contract Amm is ERC20 {
     /// @notice mints amm tokens to sender for providing liquidity
     /// @param x the amount of x supplied
     /// @param y the amount of y supplied
+    /// @return number of amm tokens minted
     function mint(uint256 x, uint256 y) public returns (uint256) {
         uint256 xReserves_ = xReserves;
         require(xReserves_ > 0, "pool needs to be initialized");
@@ -128,9 +129,11 @@ contract Amm is ERC20 {
     function sellX(uint256 wad) public returns (uint256) {
         require(wad < yReserves, "not enough y reserves");
 
+        uint256 k = xReserves * yReserves;
+
         // calculate new reserves
         uint256 newXReserves = xReserves + wad;
-        uint256 newYReserves = (xReserves * yReserves) / newXReserves;
+        uint256 newYReserves = k / newXReserves;
 
         // calculate amount of y to send
         uint256 amountToSend = yReserves - newYReserves;
@@ -138,6 +141,8 @@ contract Amm is ERC20 {
         // update reserves
         xReserves = newXReserves;
         yReserves = newYReserves;
+
+        require(xReserves * yReserves == k, "k needs to stay the same");
 
         xToken.transferFrom(msg.sender, address(this), wad);
         yToken.transfer(msg.sender, amountToSend);
